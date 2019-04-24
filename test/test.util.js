@@ -8,13 +8,15 @@ const util = {
 		years: function (val) { return val * this.days(365); },
 	},
 
-	assertRevert: async (promise) => {
+	assertRevert: async (promise, expectedMessage) => {
 		try {
 			await promise;
 			assert.fail('Expected revert not received');
 		} catch (error) {
 			const revertFound = error.message.search('revert') >= 0;
-			assert(revertFound, `Expected "revert", got ${error} instead`);
+			const messageFound = error.message.search(expectedMessage) >= 0;
+			assert(revertFound, `Expected "revert", got ${error} instead.`);
+			assert(messageFound, `Expected  to include ${expectedMessage}, got ${error.message} instead.`);
 		}
 	},
 
