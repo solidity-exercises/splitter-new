@@ -11,9 +11,9 @@ const util = {
 	assertRevert: async (promise, expectedMessage) => {
 		try {
 			await promise;
-			assert.fail('Expected revert not received');
+			assert.fail("Expected revert not received");
 		} catch (error) {
-			const revertFound = error.message.search('revert') >= 0;
+			const revertFound = error.message.search("revert") >= 0;
 			const messageFound = error.message.search(expectedMessage) >= 0;
 			assert(revertFound, `Expected "revert", got ${error} instead.`);
 			assert(messageFound, `Expected  to include ${expectedMessage}, got ${error.message} instead.`);
@@ -24,13 +24,13 @@ const util = {
 		try {
 			await promise;
 		} catch (error) {
-			const invalidJump = error.message.search('invalid JUMP') >= 0;
-			const invalidOpcode = error.message.search('invalid opcode') >= 0;
-			const outOfGas = error.message.search('out of gas') >= 0;
+			const invalidJump = error.message.search("invalid JUMP") >= 0;
+			const invalidOpcode = error.message.search("invalid opcode") >= 0;
+			const outOfGas = error.message.search("out of gas") >= 0;
 			assert(invalidJump || invalidOpcode || outOfGas, `Expected throw, got ${error} instead`);
 			return;
 		}
-		assert.fail('Expected throw not received');
+		assert.fail("Expected throw not received");
 	},
 
 	watchEvent: (event) => {
@@ -59,16 +59,16 @@ const util = {
 
 		return new Promise((resolve, reject) => {
 			web3.currentProvider.sendAsync({
-				jsonrpc: '2.0',
-				method: 'evm_increaseTime',
+				jsonrpc: "2.0",
+				method: "evm_increaseTime",
 				params: [seconds],
 				id: id,
 			}, err1 => {
 				if (err1) return reject(err1);
 
 				web3.currentProvider.sendAsync({
-					jsonrpc: '2.0',
-					method: 'evm_mine',
+					jsonrpc: "2.0",
+					method: "evm_mine",
 					id: id + 1,
 				}, (err2, res) => {
 					return err2 ? reject(err2) : resolve(res);
@@ -80,9 +80,9 @@ const util = {
 	assertJump: async promise => {
 		try {
 			await promise;
-			assert.fail('Expected invalid opcode not received');
+			assert.fail("Expected invalid opcode not received");
 		} catch (error) {
-			const invalidOpcodeReceived = error.message.search('invalid opcode') >= 0;
+			const invalidOpcodeReceived = error.message.search("invalid opcode") >= 0;
 			assert(invalidOpcodeReceived, `Expected "invalid opcode", got ${error} instead`);
 		}
 	},
