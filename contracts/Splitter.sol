@@ -28,10 +28,17 @@ contract Splitter {
 
 		for (uint16 i = 0; i < recipients.length; i++) {
 			address payable recipient = recipients[i];
+			// Avoid burning
 			if (recipient != address(0)) {
-				recipient.send(share); // Avoid DOS by external revert
+				// Avoid DOS by external revert
+				bool sent = recipient.send(share);
+
+				// Avoid eth being stuck in contract
+				if (!sent) {
+					tip += share;
+				}
 			} else {
-				tip += share; // Avoid burning/eth being stuck
+				tip += share;
 			}
 		}
 
