@@ -11,11 +11,16 @@ contract Splitter {
 		_;
 	}
 
+	modifier nonZero() {
+		require(msg.value > 0, "Zero value split not allowed.");
+		_;
+	}
+
 	function getContractBalance() external view returns (uint256) {
 		return address(this).balance;
 	}
 
-	function split(address payable[] calldata recipients) external payable lengthRestricted(recipients.length) {
+	function split(address payable[] calldata recipients) external payable lengthRestricted(recipients.length) nonZero {
 		uint256 tip = msg.value % recipients.length;
 		uint256 share = msg.value / recipients.length;
 
@@ -26,7 +31,7 @@ contract Splitter {
 			if (recipient != address(0)) {
 				recipient.send(share); // Avoid DOS by external revert
 			} else {
-				tip += share; // Avoid burning
+				tip += share; // Avoid burning/eth being stuck
 			}
 		}
 
