@@ -1,4 +1,5 @@
-const Splitter = artifacts.require("./fakes/Splitter.sol");
+const Splitter = artifacts.require("./Splitter.sol");
+const ReceiverStub = artifacts.require("./ReceiverStub.sol");
 
 const assertRevert = require("./test.util").assertRevert;
 const inLogs = require("./test.util").inLogs;
@@ -103,6 +104,31 @@ contract("Splitter", ([base, another, yetAnother]) => {
 
 		// Act
 		const tx = await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount });
+
+		// Assert
+		const newBalance = web3.utils.toBN(await web3.eth.getBalance(base));
+
+		const gasConsumption = web3.utils.toBN(tx.receipt.cumulativeGasUsed).mul(web3.utils.toBN(gasPrice));
+
+		// previousBalance - gasConsumption - split + tip
+		const expectedBalance = previousBalance
+			.sub(gasConsumption)
+			.sub(splitAmount)
+			.add(expectedTip);
+
+		assert.equal(expectedBalance.toString(), newBalance.toString());
+	});
+
+	it("split Should send back tip to msg.sender When passed recipient that reverts.", async () => {
+		// Arrange
+		const previousBalance = web3.utils.toBN(await web3.eth.getBalance(base));
+		const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
+		const expectedTip = web3.utils.toBN(1);
+		const splitAmount = web3.utils.toBN(2);
+
+		const stub = await ReceiverStub.new({ from: yetAnother });
+		// Act
+		const tx = await sut.split([stub.address, another], { from: base, value: splitAmount });
 
 		// Assert
 		const newBalance = web3.utils.toBN(await web3.eth.getBalance(base));
