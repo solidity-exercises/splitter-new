@@ -11,12 +11,12 @@ contract Splitter {
 		_;
 	}
 
-	modifier nonZero() {
+	modifier withMoney() {
 		require(msg.value > 0, "Zero value split not allowed.");
 		_;
 	}
 
-	function split(address payable[] calldata recipients) external payable lengthRestricted(recipients.length) nonZero {
+	function split(address payable[] calldata recipients) external payable lengthRestricted(recipients.length) withMoney {
 		uint256 tip = msg.value % recipients.length;
 		uint256 share = msg.value / recipients.length;
 
