@@ -26,7 +26,7 @@ contract Splitter {
 
 		emit Split(msg.sender, share);
 
-		for (uint16 i = 0; i < recipients.length; i++) {
+		for (uint256 i = 0; i < recipients.length; i++) {
 			address payable recipient = recipients[i];
 			// Avoid burning
 			if (recipient != address(0)) {
