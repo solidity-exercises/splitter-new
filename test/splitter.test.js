@@ -66,7 +66,7 @@ contract("Splitter", ([base, another, yetAnother]) => {
 		// Assert
 		const newBalance = web3.utils.toBN(await web3.eth.getBalance(base));
 
-		const gasConsumption = web3.utils.toBN(tx.receipt.cumulativeGasUsed).mul(web3.utils.toBN(gasPrice));
+		const gasConsumption = web3.utils.toBN(tx.receipt.gasUsed).mul(web3.utils.toBN(gasPrice));
 
 		// previousBalance - gasConsumption - split + tip
 		const expectedBalance = previousBalance
@@ -108,7 +108,7 @@ contract("Splitter", ([base, another, yetAnother]) => {
 		// Assert
 		const newBalance = web3.utils.toBN(await web3.eth.getBalance(base));
 
-		const gasConsumption = web3.utils.toBN(tx.receipt.cumulativeGasUsed).mul(web3.utils.toBN(gasPrice));
+		const gasConsumption = web3.utils.toBN(tx.receipt.gasUsed).mul(web3.utils.toBN(gasPrice));
 
 		// previousBalance - gasConsumption - split + tip
 		const expectedBalance = previousBalance
@@ -133,7 +133,7 @@ contract("Splitter", ([base, another, yetAnother]) => {
 		// Assert
 		const newBalance = web3.utils.toBN(await web3.eth.getBalance(base));
 
-		const gasConsumption = web3.utils.toBN(tx.receipt.cumulativeGasUsed).mul(web3.utils.toBN(gasPrice));
+		const gasConsumption = web3.utils.toBN(tx.receipt.gasUsed).mul(web3.utils.toBN(gasPrice));
 
 		// previousBalance - gasConsumption - split + tip
 		const expectedBalance = previousBalance
