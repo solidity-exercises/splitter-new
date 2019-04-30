@@ -1,5 +1,4 @@
 const Splitter = artifacts.require("./Splitter.sol");
-const ReceiverStub = artifacts.require("./ReceiverStub.sol");
 
 const assertRevert = require("./test.util").assertRevert;
 const inLogs = require("./test.util").inLogs;
@@ -20,11 +19,11 @@ contract("Splitter", ([base, another, yetAnother]) => {
 
 	it("split Should revert When passed more than max recipients.", async () => {
 		// Arrange
-		const recipients = new Array(1025).fill(another);
+		const recipients = new Array(129).fill(another);
 		// Act
 		const result = sut.split(recipients, { from: base, value: 1025 });
 		// Assert
-		await assertRevert(result, "Passed len greater than recipients max len.");
+		await assertRevert(result, "Passed len greater than _recipients max len.");
 	});
 
 	it("split Should revert When passed zero msg value.", async () => {
@@ -45,37 +44,31 @@ contract("Splitter", ([base, another, yetAnother]) => {
 
 	it("split Should send exact shares to all recipients When passed valid arguments.", async () => {
 		// Arrange
-		const anotherPreviousBalance = await web3.eth.getBalance(another);
-		const yetAnotherPreviousBalance = await web3.eth.getBalance(yetAnother);
+		const anotherPreviousBalance = await sut.balanceOf(another);
+		const yetAnotherPreviousBalance = await sut.balanceOf(yetAnother);
 		// Act
 		await sut.split([another, yetAnother], { from: base, value: 2 });
 		// Assert
-		const anotherNewBalance = await web3.eth.getBalance(another);
-		const yetAnotherNewBalance = await web3.eth.getBalance(yetAnother);
+		const anotherNewBalance = await sut.balanceOf(another);
+		const yetAnotherNewBalance = await sut.balanceOf(yetAnother);
 
-		assert.equal(toBN(anotherPreviousBalance).add(toBN(1)).toString(), anotherNewBalance);
-		assert.equal(toBN(yetAnotherPreviousBalance).add(toBN(1)).toString(), yetAnotherNewBalance);
+		assert.equal(anotherPreviousBalance.add(toBN(1)).toString(), anotherNewBalance);
+		assert.equal(yetAnotherPreviousBalance.add(toBN(1)).toString(), yetAnotherNewBalance);
 	});
 
 	it("split Should send back tip to msg.sender When passed not exact amount to split.", async () => {
 		// Arrange
-		const previousBalance = toBN(await web3.eth.getBalance(base));
-		const gasPrice = toBN(await web3.eth.getGasPrice());
+		const previousBalance = await sut.balanceOf(base);
 		const expectedTip = toBN(1);
 		const splitAmount = toBN(3);
 
 		// Act
-		const tx = await sut.split([another, yetAnother], { from: base, value: splitAmount, gasPrice: gasPrice });
+		await sut.split([another, yetAnother], { from: base, value: splitAmount });
 
 		// Assert
-		const newBalance = toBN(await web3.eth.getBalance(base));
+		const newBalance = await sut.balanceOf(base);
 
-		const gasConsumption = toBN(tx.receipt.gasUsed).mul(toBN(gasPrice));
-
-		// previousBalance - gasConsumption - split + tip
 		const expectedBalance = previousBalance
-			.sub(gasConsumption)
-			.sub(splitAmount)
 			.add(expectedTip);
 
 		assert.equal(expectedBalance.toString(), newBalance.toString());
@@ -83,7 +76,7 @@ contract("Splitter", ([base, another, yetAnother]) => {
 
 	it("split Should split shares successfully When passed zero address as recipient.", async () => {
 		// Arrange
-		const previousBalance = toBN(await web3.eth.getBalance(another));
+		const previousBalance = await sut.balanceOf(another);
 		const expectedShare = toBN(1);
 		const splitAmount = toBN(2);
 
@@ -91,7 +84,7 @@ contract("Splitter", ([base, another, yetAnother]) => {
 		await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount });
 
 		// Assert
-		const newBalance = toBN(await web3.eth.getBalance(another));
+		const newBalance = await sut.balanceOf(another);
 
 		const expectedBalance = previousBalance
 			.add(expectedShare);
@@ -101,48 +94,17 @@ contract("Splitter", ([base, another, yetAnother]) => {
 
 	it("split Should send back tip to msg.sender When passed zero address as recipient.", async () => {
 		// Arrange
-		const previousBalance = toBN(await web3.eth.getBalance(base));
-		const gasPrice = toBN(await web3.eth.getGasPrice());
+		const previousBalance = await sut.balanceOf(base);
 		const expectedTip = toBN(1);
 		const splitAmount = toBN(2);
 
 		// Act
-		const tx = await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount, gasPrice: gasPrice });
+		await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount });
 
 		// Assert
-		const newBalance = toBN(await web3.eth.getBalance(base));
+		const newBalance = await sut.balanceOf(base);
 
-		const gasConsumption = toBN(tx.receipt.gasUsed).mul(toBN(gasPrice));
-
-		// previousBalance - gasConsumption - split + tip
 		const expectedBalance = previousBalance
-			.sub(gasConsumption)
-			.sub(splitAmount)
-			.add(expectedTip);
-
-		assert.equal(expectedBalance.toString(), newBalance.toString());
-	});
-
-	it("split Should send back tip to msg.sender When passed recipient that reverts.", async () => {
-		// Arrange
-		const previousBalance = toBN(await web3.eth.getBalance(base));
-		const gasPrice = toBN(await web3.eth.getGasPrice());
-		const expectedTip = toBN(1);
-		const splitAmount = toBN(2);
-
-		const stub = await ReceiverStub.new({ from: yetAnother });
-		// Act
-		const tx = await sut.split([stub.address, another], { from: base, value: splitAmount, gasPrice: gasPrice });
-
-		// Assert
-		const newBalance = toBN(await web3.eth.getBalance(base));
-
-		const gasConsumption = toBN(tx.receipt.gasUsed).mul(toBN(gasPrice));
-
-		// previousBalance - gasConsumption - split + tip
-		const expectedBalance = previousBalance
-			.sub(gasConsumption)
-			.sub(splitAmount)
 			.add(expectedTip);
 
 		assert.equal(expectedBalance.toString(), newBalance.toString());

@@ -3,7 +3,7 @@ pragma solidity 0.5.7;
 
 contract Splitter {
 	uint8 constant RECIPIENTS_MAX_LEN = 128;
-	mapping (address => uint256) balanceOf;
+	mapping (address => uint256) public balanceOf;
 
 	event Split(address indexed from, uint256 share);
 	event Withdrawal(address indexed recipient, uint256 amount);
