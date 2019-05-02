@@ -37,10 +37,11 @@ contract("Splitter", ([base, another, yetAnother]) => {
 
 		it("split Should emit Split event with exact values When passed valid arguments.", async () => {
 			// Arrange
+			const recipients = [another, yetAnother];
 			// Act
-			const { logs } = await sut.split([another, yetAnother], { from: base, value: 2 });
+			const { logs } = await sut.split(recipients, { from: base, value: 2 });
 			// Assert
-			await inLogs(logs, "Split", { "from": base, "share": toBN(1) });
+			await inLogs(logs, "Split", { "from": base, "recipients": recipients, "share": toBN(1) });
 		});
 
 		it("split Should send exact shares to all recipients When passed valid arguments.", async () => {
@@ -56,91 +57,25 @@ contract("Splitter", ([base, another, yetAnother]) => {
 			assert.equal(anotherPreviousBalance.add(toBN(1)).toString(), anotherNewBalance);
 			assert.equal(yetAnotherPreviousBalance.add(toBN(1)).toString(), yetAnotherNewBalance);
 		});
-
-		it("split Should send back tip to msg.sender When passed not exact amount to split.", async () => {
-			// Arrange
-			const previousBalance = await sut.balanceOf(base);
-			const expectedTip = toBN(1);
-			const splitAmount = toBN(3);
-
-			// Act
-			await sut.split([another, yetAnother], { from: base, value: splitAmount });
-
-			// Assert
-			const newBalance = await sut.balanceOf(base);
-
-			const expectedBalance = previousBalance
-				.add(expectedTip);
-
-			assert.equal(expectedBalance.toString(), newBalance.toString());
-		});
-
-		it("split Should split shares successfully When passed zero address as recipient.", async () => {
-			// Arrange
-			const previousBalance = await sut.balanceOf(another);
-			const expectedShare = toBN(1);
-			const splitAmount = toBN(2);
-
-			// Act
-			await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount });
-
-			// Assert
-			const newBalance = await sut.balanceOf(another);
-
-			const expectedBalance = previousBalance
-				.add(expectedShare);
-
-			assert.equal(expectedBalance.toString(), newBalance.toString());
-		});
-
-		it("split Should send back tip to msg.sender When passed zero address as recipient.", async () => {
-			// Arrange
-			const previousBalance = await sut.balanceOf(base);
-			const expectedTip = toBN(1);
-			const splitAmount = toBN(2);
-
-			// Act
-			await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount });
-
-			// Assert
-			const newBalance = await sut.balanceOf(base);
-
-			const expectedBalance = previousBalance
-				.add(expectedTip);
-
-			assert.equal(expectedBalance.toString(), newBalance.toString());
-		});
 	});
 
 	describe("Withdraw tests", () => {
 		const splitAmount = toBN(1);
 		const withdrawalAmount = toBN(1);
 
-		it("withdraw Should revert When msg sender has insufficient balance.", async () => {
-			// Arrange
-			// Act
-			const result = sut.withdraw(withdrawalAmount, { from: another });
-
-			// Assert
-			await assertRevert(result, "Your balance is insufficient.");
-		});
-
-		it("withdraw Should subtract exact amount from msg sender balance When passed valid arguments.", async () => {
+		it("withdraw Should set msg sender balance to 0 When passed valid arguments.", async () => {
 			// Arrange
 			await sut.split([another], { from: base, value: splitAmount });
 
-			const previousBalance = await sut.balanceOf(another);
-
 			// Act
-			await sut.withdraw(withdrawalAmount, { from: another });
+			await sut.withdraw({ from: another });
 
 			// Assert
 			const newBalance = await sut.balanceOf(another);
 
-			const expectedBalance = previousBalance
-				.sub(withdrawalAmount);
+			const expectedBalance = "0";
 
-			assert.equal(expectedBalance.toString(), newBalance.toString());
+			assert.equal(expectedBalance, newBalance.toString());
 		});
 
 		it("withdraw Should emit Withdrawal event with exact values When passed valid arguments.", async () => {
@@ -148,7 +83,7 @@ contract("Splitter", ([base, another, yetAnother]) => {
 			await sut.split([another], { from: base, value: splitAmount });
 
 			// Act
-			const { logs } = await sut.withdraw(withdrawalAmount, { from: another });
+			const { logs } = await sut.withdraw({ from: another });
 
 			// Assert
 			await inLogs(logs, "Withdrawal", { "recipient": another, "amount": withdrawalAmount });
@@ -162,7 +97,7 @@ contract("Splitter", ([base, another, yetAnother]) => {
 			const gasPrice = toBN(await web3.eth.getGasPrice());
 
 			// Act
-			const tx = await sut.withdraw(withdrawalAmount, { from: another, gasPrice: gasPrice });
+			const tx = await sut.withdraw({ from: another, gasPrice: gasPrice });
 
 			// Assert
 			const newBalance = toBN(await web3.eth.getBalance(another));
