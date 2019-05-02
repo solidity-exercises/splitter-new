@@ -1,11 +1,16 @@
 pragma solidity 0.5.7;
 
+import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-contract Splitter {
+
+contract Splitter is Ownable {
+	using SafeMath for uint256;
+
 	uint8 constant RECIPIENTS_MAX_LEN = 128;
 	mapping (address => uint256) public balanceOf;
 
-	event Split(address indexed from, uint256 share);
+	event Split(address indexed from, address[] recipients, uint256 share);
 	event Withdrawal(address indexed recipient, uint256 amount);
 
 	modifier lengthRestricted(uint256 _len) {
@@ -18,78 +23,28 @@ contract Splitter {
 		_;
 	}
 
-	modifier hasEnoughBalance(uint256 _amount) {
-		require(balanceOf[msg.sender] >= _amount, "Your balance is insufficient.");
-		_;
-	}
-
 	function split(address[] calldata _recipients) external payable lengthRestricted(_recipients.length) withMoney {
-		uint256 tip = mod(msg.value, _recipients.length);
-		uint256 share = div(msg.value, _recipients.length);
+		uint256 share = msg.value.div(_recipients.length);
 
-		emit Split(msg.sender, share);
+		emit Split(msg.sender, _recipients, share);
 
 		for (uint256 i = 0; i < _recipients.length; i++) {
 			address recipient = _recipients[i];
-			// Avoid burning
-			if (recipient != address(0)) {
-				balanceOf[recipient] = add(balanceOf[recipient], share);
-			} else {
-				tip += share;
-			}
-		}
-
-		if (tip > 0) {
-			balanceOf[msg.sender] = add(balanceOf[msg.sender], tip);
+			uint256 newBalance = balanceOf[recipient].add(share);
+			balanceOf[recipient] = newBalance;
 		}
 	}
 
-	function withdraw(uint256 _amount) external hasEnoughBalance(_amount) {
-		balanceOf[msg.sender] = sub(balanceOf[msg.sender], _amount);
+	function withdraw() external {
+		uint256 amount = balanceOf[msg.sender];
+		balanceOf[msg.sender] = 0;
 
-		emit Withdrawal(msg.sender, _amount);
+		emit Withdrawal(msg.sender, amount);
 
-		msg.sender.transfer(_amount);
+		msg.sender.transfer(amount);
 	}
 
-	/**
-	* @dev Adds two unsigned integers, reverts on overflow.
-	*/
-	function add(uint256 _a, uint256 _b) private pure returns (uint256) {
-		uint256 c = _a + _b;
-		require(c >= _a, "SafeMath: addition overflow");
-
-		return c;
-	}
-
-	/**
-	* @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-	*/
-	function sub(uint256 _a, uint256 _b) private pure returns (uint256) {
-		require(_b <= _a, "SafeMath: subtraction overflow");
-		uint256 c = _a - _b;
-
-		return c;
-	}
-
-	/**
-     * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
-     */
-	function div(uint256 _a, uint256 _b) private pure returns (uint256) {
-		// Solidity only automatically asserts when dividing by 0
-		require(_b > 0, "SafeMath: division by zero");
-		uint256 c = _a / _b;
-		// assert(_a == _b * c + _a % _b); // There is no case in which this doesn't hold
-
-		return c;
-	}
-
-	/**
-     * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-     * reverts when dividing by zero.
-     */
-	function mod(uint256 _a, uint256 _b) private pure returns (uint256) {
-		require(_b != 0, "SafeMath: modulo by zero");
-		return _a % _b;
+	function destruct(address payable _recipient) external onlyOwner {
+		selfdestruct(_recipient);
 	}
 }
