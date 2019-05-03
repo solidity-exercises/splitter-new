@@ -1,10 +1,9 @@
 pragma solidity 0.5.7;
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
-contract Splitter is Ownable {
+contract Splitter {
 	using SafeMath for uint256;
 
 	uint8 constant RECIPIENTS_MAX_LEN = 128;
