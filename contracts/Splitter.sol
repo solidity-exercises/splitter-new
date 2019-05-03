@@ -43,8 +43,4 @@ contract Splitter is Ownable {
 
 		msg.sender.transfer(amount);
 	}
-
-	function destruct(address payable _recipient) external onlyOwner {
-		selfdestruct(_recipient);
-	}
 }
