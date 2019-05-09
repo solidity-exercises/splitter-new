@@ -23,19 +23,31 @@ contract Splitter {
 	}
 
 	function split(address[] calldata _recipients) external payable lengthRestricted(_recipients.length) withMoney {
+		uint256 tip = msg.value.mod(_recipients.length);
 		uint256 share = msg.value.div(_recipients.length);
 
 		emit Split(msg.sender, _recipients, share);
 
 		for (uint256 i = 0; i < _recipients.length; i++) {
 			address recipient = _recipients[i];
-			uint256 newBalance = balanceOf[recipient].add(share);
-			balanceOf[recipient] = newBalance;
+			// Avoid burning
+			if (recipient != address(0)) {
+				uint256 newBalance = balanceOf[recipient].add(share);
+				balanceOf[recipient] = newBalance;
+			} else {
+				tip = tip.add(share);
+			}
+		}
+
+		if (tip > 0) {
+			balanceOf[msg.sender] = balanceOf[msg.sender].add(tip);
 		}
 	}
 
 	function withdraw() external {
 		uint256 amount = balanceOf[msg.sender];
+		require(amount > 0, "Can not withdraw zero amount.");
+
 		balanceOf[msg.sender] = 0;
 
 		emit Withdrawal(msg.sender, amount);
