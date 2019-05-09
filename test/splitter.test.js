@@ -6,6 +6,7 @@ const inLogs = require("./test.util").inLogs;
 const { toBN } = web3.utils;
 
 contract("Splitter", ([base, another, yetAnother]) => {
+	const ZERO_ADDRESS = "0x" + "0".repeat(40);
 	let sut;
 
 	before(() => {
@@ -57,6 +58,60 @@ contract("Splitter", ([base, another, yetAnother]) => {
 			assert.equal(yetAnotherPreviousBalance.add(toBN(1)).toString(), yetAnotherNewBalance);
 		});
 
+		it("split Should send back tip to msg.sender When passed not exact amount to split.", async () => {
+			// Arrange
+			const previousBalance = await sut.balanceOf(base);
+			const expectedTip = toBN(1);
+			const splitAmount = toBN(3);
+
+			// Act
+			await sut.split([another, yetAnother], { from: base, value: splitAmount });
+
+			// Assert
+			const newBalance = await sut.balanceOf(base);
+
+			const expectedBalance = previousBalance
+				.add(expectedTip);
+
+			assert.equal(expectedBalance.toString(), newBalance.toString());
+		});
+
+		it("split Should split shares successfully When passed zero address as recipient.", async () => {
+			// Arrange
+			const previousBalance = await sut.balanceOf(another);
+			const expectedShare = toBN(1);
+			const splitAmount = toBN(2);
+
+			// Act
+			await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount });
+
+			// Assert
+			const newBalance = await sut.balanceOf(another);
+
+			const expectedBalance = previousBalance
+				.add(expectedShare);
+
+			assert.equal(expectedBalance.toString(), newBalance.toString());
+		});
+
+		it("split Should send back tip to msg.sender When passed zero address as recipient.", async () => {
+			// Arrange
+			const previousBalance = await sut.balanceOf(base);
+			const expectedTip = toBN(1);
+			const splitAmount = toBN(2);
+
+			// Act
+			await sut.split([ZERO_ADDRESS, another], { from: base, value: splitAmount });
+
+			// Assert
+			const newBalance = await sut.balanceOf(base);
+
+			const expectedBalance = previousBalance
+				.add(expectedTip);
+
+			assert.equal(expectedBalance.toString(), newBalance.toString());
+		});
+
 		it("split Should have gas consumption less than the desired one When passed max recipients.", async () => {
 			// Arrange
 			const desiredGasLimit = 3000000;
@@ -74,6 +129,14 @@ contract("Splitter", ([base, another, yetAnother]) => {
 	describe("Withdraw tests", () => {
 		const splitAmount = toBN(1);
 		const withdrawalAmount = toBN(1);
+
+		it("withdraw Should revert When invoked with zero msg.sender's balance.", async () => {
+			// Arrange
+			// Act
+			const result = sut.withdraw({ from: base });
+			// Assert
+			await assertRevert(result, "Can not withdraw zero amount.");
+		});
 
 		it("withdraw Should set msg sender balance to 0 When passed valid arguments.", async () => {
 			// Arrange
