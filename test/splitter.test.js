@@ -1,20 +1,14 @@
 const Splitter = artifacts.require("./Splitter.sol");
 
-const assertRevert = require("./test.util").assertRevert;
-const inLogs = require("./test.util").inLogs;
-
+const { assertRevert, inLogs}  = require("./test.util");
 const { toBN } = web3.utils;
 
 contract("Splitter", ([base, another, yetAnother]) => {
 	const ZERO_ADDRESS = "0x" + "0".repeat(40);
 	let sut;
 
-	before(() => {
-		web3.eth.defaultAccount = base;
-	});
-
 	beforeEach("Instantiate Splitter", async () => {
-		sut = await Splitter.new();
+		sut = await Splitter.new({ from: base });
 	});
 
 	describe("Split tests", () => {
